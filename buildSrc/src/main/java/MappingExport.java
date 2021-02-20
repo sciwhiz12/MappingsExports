@@ -8,7 +8,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -148,7 +147,7 @@ public class MappingExport {
     }
 
     public void write(File output) throws IOException {
-        try (FileSystem fs = FileSystems.newFileSystem(output.toPath().toUri(), FS_OPTIONS)) {
+        try (FileSystem fs = FileSystems.newFileSystem(output.toPath(), FS_OPTIONS)) {
 
             // functions/methods file
             try (BufferedWriter writer = Files.newBufferedWriter(fs.getPath(METHODS_CSV))) {
@@ -159,7 +158,7 @@ public class MappingExport {
                 methods.sort(Comparator.comparing(MemberEntry::getUnmappedName));
 
                 for (MemberEntry func : methods) {
-                    if (!func.getMappedName().trim().isEmpty()) {
+                    if (!func.getMappedName().isBlank()) {
                         writer.write(String.join(",", new String[] {
                             func.getUnmappedName(), func.getMappedName(), Integer.toString(func.getSide().toNumber()),
                             func.getJavadoc()
@@ -178,7 +177,7 @@ public class MappingExport {
                 fields.sort(Comparator.comparing(MemberEntry::getUnmappedName));
 
                 for (MemberEntry field : fields) {
-                    if (!field.getMappedName().trim().isEmpty()) {
+                    if (!field.getMappedName().isBlank()) {
                         writer.write(String.join(",", new String[] {
                             field.getUnmappedName(), field.getMappedName(), Integer.toString(field.getSide().toNumber()),
                             field.getJavadoc()
@@ -197,7 +196,7 @@ public class MappingExport {
                 params.sort(Comparator.comparing(ParamEntry::getUnmappedName));
 
                 for (ParamEntry param : params) {
-                    if (!param.getMappedName().trim().isEmpty()) {
+                    if (!param.getMappedName().isBlank()) {
                         writer.write(String.join(",", new String[] {
                             param.getUnmappedName(), param.getMappedName(), Integer.toString(param.getSide().toNumber())
                         }));
@@ -211,7 +210,7 @@ public class MappingExport {
     public static MappingExport read(File export) {
         MappingExport mappings = new MappingExport();
 
-        try (FileSystem fs = FileSystems.newFileSystem(export.toPath().toUri(), Collections.emptyMap())) {
+        try (FileSystem fs = FileSystems.newFileSystem(export.toPath())) {
 
             // Functions/methods CSV file
             try (CSVReader reader = new CSVReader(Files.newBufferedReader(fs.getPath(METHODS_CSV)))) {
