@@ -71,7 +71,3 @@ static def getDateTime(boolean time) {
     }
     return builder.toFormatter().format(OffsetDateTime.now(ZoneOffset.UTC))
 }
-
-afterEvaluate {
-    CompareCSVs.compare(project.file('fields_giga.csv'), project.file('fields_us.csv'))
-}
