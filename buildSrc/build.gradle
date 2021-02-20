@@ -1,0 +1,7 @@
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.3'
+}

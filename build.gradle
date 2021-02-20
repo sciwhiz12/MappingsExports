@@ -1,0 +1,77 @@
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
+
+plugins {
+    id "de.undercouch.download" version "4.1.1"
+}
+
+repositories {
+    maven {
+        name "MinecraftForge Maven"
+        url "https://files.minecraftforge.net/maven/"
+    }
+}
+
+String date = getDateTime(false)
+String datetime = getDateTime(true)
+
+task downloadSpreadsheet(type: Download, group: 'mappings') {
+    description "Downloads the mappings spreadsheet"
+
+    src "https://docs.google.com/spreadsheets/d/${urlEncode(spreadsheet_key)}/gviz/tq?tqx=out:csv&sheet=${urlEncode(sheet_name)}"
+    dest "$buildDir/spreadsheet.csv"
+}
+
+task downloadBaseExport(type: Download, group: 'mappings') {
+    description "Downloads the base MCP mappings export from the dependencies cache"
+
+    src "https://files.minecraftforge.net/maven/de/oceanlabs/mcp/mcp_${base_channel}/${base_version}/mcp_${base_channel}-${base_version}.zip"
+    dest "$buildDir/baseExports/${base_channel}-${base_version}.zip"
+}
+
+task combineMappings(type: CombineMappings, group: 'mappings', dependsOn: [downloadSpreadsheet, downloadBaseExport]) {
+    description "Combines the mappings from the base MCP export and the mappings spreadsheet"
+
+    baseExportZip = project.file("$buildDir/baseExports/${base_channel}-${base_version}.zip")
+    spreadsheet = project.file("$buildDir/spreadsheet.csv")
+    allowUnvalidated = Boolean.getBoolean("allowUnvalidated") || allowUnvalidated
+    output = project.file("$buildDir/combineMappings/${base_channel}_${base_version}-${export_channel}_${export_version}-${date}.csv")
+}
+
+task generateDatedExport(type: GenerateMappingExport, group: 'mappings', dependsOn: combineMappings) {
+    description "Generates a combined mappings export timestamped with the current date"
+
+    spreadsheet = project.file("$buildDir/combineMappings/${base_channel}_${base_version}-${export_channel}_${export_version}-${date}.csv")
+    output = project.file("$buildDir/exports/mcp_${export_channel}-${date}-${export_version}.zip")
+}
+
+task generateExport(type: GenerateMappingExport, group: 'mappings', dependsOn: combineMappings) {
+    description "Generates a combined mappings export timestamped with the current date and time"
+
+    spreadsheet = project.file("$buildDir/combineMappings/${base_channel}_${base_version}-${export_channel}_${export_version}-${date}.csv")
+    output = project.file("$buildDir/exports/mcp_${export_channel}-${datetime}-${export_version}.zip")
+}
+
+static def urlEncode(String text) {
+    return URLEncoder.encode(text, "UTF-8")
+}
+
+static def getDateTime(boolean time) {
+    DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.YEAR, 4)
+            .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+            .appendValue(ChronoField.DAY_OF_MONTH, 2)
+    if (time) {
+        builder.appendLiteral('_')
+                .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+    }
+    return builder.toFormatter().format(OffsetDateTime.now(ZoneOffset.UTC))
+}
+
+afterEvaluate {
+    CompareCSVs.compare(project.file('fields_giga.csv'), project.file('fields_us.csv'))
+}
