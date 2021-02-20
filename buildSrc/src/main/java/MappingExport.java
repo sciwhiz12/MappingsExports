@@ -148,7 +148,7 @@ public class MappingExport {
     }
 
     public void write(File output) throws IOException {
-        try (FileSystem fs = FileSystems.newFileSystem(output.toPath(), FS_OPTIONS)) {
+        try (FileSystem fs = FileSystems.newFileSystem(output.toPath().toUri(), FS_OPTIONS)) {
 
             // functions/methods file
             try (BufferedWriter writer = Files.newBufferedWriter(fs.getPath(METHODS_CSV))) {
@@ -159,7 +159,7 @@ public class MappingExport {
                 methods.sort(Comparator.comparing(MemberEntry::getUnmappedName));
 
                 for (MemberEntry func : methods) {
-                    if (!func.getMappedName().isBlank()) {
+                    if (!func.getMappedName().trim().isEmpty()) {
                         writer.write(String.join(",", new String[] {
                             func.getUnmappedName(), func.getMappedName(), Integer.toString(func.getSide().toNumber()),
                             func.getJavadoc()
@@ -178,7 +178,7 @@ public class MappingExport {
                 fields.sort(Comparator.comparing(MemberEntry::getUnmappedName));
 
                 for (MemberEntry field : fields) {
-                    if (!field.getMappedName().isBlank()) {
+                    if (!field.getMappedName().trim().isEmpty()) {
                         writer.write(String.join(",", new String[] {
                             field.getUnmappedName(), field.getMappedName(), Integer.toString(field.getSide().toNumber()),
                             field.getJavadoc()
@@ -197,7 +197,7 @@ public class MappingExport {
                 params.sort(Comparator.comparing(ParamEntry::getUnmappedName));
 
                 for (ParamEntry param : params) {
-                    if (!param.getMappedName().isBlank()) {
+                    if (!param.getMappedName().trim().isEmpty()) {
                         writer.write(String.join(",", new String[] {
                             param.getUnmappedName(), param.getMappedName(), Integer.toString(param.getSide().toNumber())
                         }));
@@ -211,7 +211,7 @@ public class MappingExport {
     public static MappingExport read(File export) {
         MappingExport mappings = new MappingExport();
 
-        try (FileSystem fs = FileSystems.newFileSystem(export.toPath())) {
+        try (FileSystem fs = FileSystems.newFileSystem(export.toPath().toUri(), Collections.emptyMap())) {
 
             // Functions/methods CSV file
             try (CSVReader reader = new CSVReader(Files.newBufferedReader(fs.getPath(METHODS_CSV)))) {
